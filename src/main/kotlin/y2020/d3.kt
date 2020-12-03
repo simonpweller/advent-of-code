@@ -11,18 +11,17 @@ fun main() {
 private fun part1(rows: List<String>, slope: Slope = Slope(3, 1)): Int {
     val colLength = rows.first().length
     var count = 0
-    for ((loopIndex, rowIndex) in (0 .. rows.lastIndex step slope.down).withIndex()) {
-        val colIndex = loopIndex * slope.right % colLength
+    var colIndex = 0
+    (0..rows.lastIndex step slope.down).forEach { rowIndex ->
         if (rows[rowIndex][colIndex] == '#') count++
+        colIndex = (colIndex + slope.right) % colLength
     }
     return count
 }
 
-private fun part2(rows: List<String>): Long {
-    val slopes = listOf(Slope(1, 1), Slope(3, 1), Slope(5, 1), Slope(7, 1), Slope(1, 2))
-    return slopes.fold(1L) { multiplied: Long, slope: Slope ->
-        multiplied * part1(rows, slope)
-    }
-}
+private fun part2(rows: List<String>): Long =
+    listOf(Slope(1, 1), Slope(3, 1), Slope(5, 1), Slope(7, 1), Slope(1, 2))
+        .map { slope -> part1(rows, slope) }
+        .fold(1) { total, treesHit -> total * treesHit }
 
 class Slope(val right: Int, val down: Int)
