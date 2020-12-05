@@ -3,57 +3,61 @@ package y2020
 import inputLines
 
 fun main() {
-    val boardingPasses = inputLines(2020, 5).map(::BoardingPass)
-    println(boardingPasses.map { it.seatId }.maxOrNull())
-    println(part2(boardingPasses))
+    val seats = inputLines(2020, 5).map(BoardingPassScanner::scan)
+    println(seats.map(Seat::seatId).maxOrNull())
+    println(part2(seats))
 }
 
-fun part2(boardingPasses: List<BoardingPass>): Int {
+private fun part2(takenSeats: List<Seat>): Int {
     val allSeats = (0..127).flatMap { row ->
         (0..7).map { col ->
-            BoardingPass(row, col)
+            Seat(row, col)
         }
     }
     val yourSeat = allSeats.first {
-        it !in boardingPasses && BoardingPass(it.row - 1, it.col) in boardingPasses && BoardingPass(
-            it.row + 1,
-            it.col
-        ) in boardingPasses
+        it !in takenSeats
+                && Seat(it.row - 1, it.col) in takenSeats
+                && Seat(it.row + 1, it.col) in takenSeats
     }
     return yourSeat.seatId
 }
 
-data class BoardingPass(val row: Int, val col: Int) {
-    constructor(boardingPassNumber: String) :
-            this(getRow(boardingPassNumber), getCol(boardingPassNumber))
-
+private data class Seat(val row: Int, val col: Int) {
     val seatId: Int = row * 8 + col
 }
 
-fun getRow(boardingPassNumber: String) =
-    boardingPassNumber.substring(0, 7).fold(0..127) { range, char ->
-        when (char) {
-            'F' -> range.lowerHalf
-            'B' -> range.upperHalf
-            else -> throw NotImplementedError()
-        }
-    }.first
 
-fun getCol(boardingPassNumber: String) =
-    boardingPassNumber.substring(7, 10).fold(0..7) { range, char ->
-        when (char) {
-            'L' -> range.lowerHalf
-            'R' -> range.upperHalf
-            else -> throw NotImplementedError()
-        }
-    }.first
+private class BoardingPassScanner {
+    companion object {
+        fun scan(boardingPassNumber: String): Seat =
+            Seat(scanRow(boardingPassNumber), scanCol(boardingPassNumber))
+
+        private fun scanRow(boardingPassNumber: String) =
+            boardingPassNumber.substring(0, 7).fold(0..127) { range, char ->
+                when (char) {
+                    'F' -> range.lowerHalf
+                    'B' -> range.upperHalf
+                    else -> throw NotImplementedError()
+                }
+            }.first
+
+        private fun scanCol(boardingPassNumber: String) =
+            boardingPassNumber.substring(7, 10).fold(0..7) { range, char ->
+                when (char) {
+                    'L' -> range.lowerHalf
+                    'R' -> range.upperHalf
+                    else -> throw NotImplementedError()
+                }
+            }.first
+    }
+}
 
 
-val IntRange.size: Int
+private val IntRange.size: Int
     get() = last - first + 1
 
-val IntRange.lowerHalf: IntRange
+private val IntRange.lowerHalf: IntRange
     get() = first..last - size / 2
 
-val IntRange.upperHalf: IntRange
+private val IntRange.upperHalf: IntRange
     get() = first + size / 2..last
