@@ -54,24 +54,30 @@ enum class Opcode {
 }
 
 data class Registers(val values: Map<Int, Long>) {
+    private fun register(register: Int) = values.getValue(register)
+    private fun value(register: Int) = register.toLong()
+
     operator fun plus(instruction: Instruction): Registers {
-        return when(instruction.opcode) {
-            Opcode.ADDR -> Registers(values.plus(instruction.c to values.getValue(instruction.a) + values.getValue(instruction.b)))
-            Opcode.ADDI -> Registers(values.plus(instruction.c to values.getValue(instruction.a) + instruction.b))
-            Opcode.MULR -> Registers(values.plus(instruction.c to values.getValue(instruction.a) * values.getValue(instruction.b)))
-            Opcode.MULI -> Registers(values.plus(instruction.c to values.getValue(instruction.a) * instruction.b))
-            Opcode.BANR -> Registers(values.plus(instruction.c to values.getValue(instruction.a).and(values.getValue(instruction.b))))
-            Opcode.BANI -> Registers(values.plus(instruction.c to values.getValue(instruction.a).and(instruction.b.toLong())))
-            Opcode.BORR -> Registers(values.plus(instruction.c to values.getValue(instruction.a).or(values.getValue(instruction.b))))
-            Opcode.BORI -> Registers(values.plus(instruction.c to values.getValue(instruction.a).or(instruction.b.toLong())))
-            Opcode.SETR -> Registers(values.plus(instruction.c to values.getValue(instruction.a)))
-            Opcode.SETI -> Registers(values.plus(instruction.c to instruction.a.toLong()))
-            Opcode.GTIR -> Registers(values.plus(instruction.c to if(instruction.a > values.getValue(instruction.b)) 1 else 0))
-            Opcode.GTRI -> Registers(values.plus(instruction.c to if(values.getValue(instruction.a) > instruction.b) 1 else 0))
-            Opcode.GTRR -> Registers(values.plus(instruction.c to if(values.getValue(instruction.a) > values.getValue(instruction.b)) 1 else 0))
-            Opcode.EQIR -> Registers(values.plus(instruction.c to if(instruction.a.toLong() == values.getValue(instruction.b)) 1 else 0))
-            Opcode.EQRI -> Registers(values.plus(instruction.c to if(values.getValue(instruction.a) == instruction.b.toLong()) 1 else 0))
-            Opcode.EQRR -> Registers(values.plus(instruction.c to if(values.getValue(instruction.a) == values.getValue(instruction.b)) 1 else 0))
+        val value = with(instruction) {
+            when(opcode) {
+                Opcode.ADDR -> register(a) + register(b)
+                Opcode.ADDI -> register(a) + value(b)
+                Opcode.MULR -> register(a) * register(b)
+                Opcode.MULI -> register(a) * value(b)
+                Opcode.BANR -> register(a).and(register(b))
+                Opcode.BANI -> register(a).and(value(b))
+                Opcode.BORR -> register(a).or(register(b))
+                Opcode.BORI -> register(a).or(value(b))
+                Opcode.SETR -> register(a)
+                Opcode.SETI -> value(a)
+                Opcode.GTIR -> if(value(a) > register(b)) 1 else 0
+                Opcode.GTRI -> if(register(a) > value(b)) 1 else 0
+                Opcode.GTRR -> if(register(a) > register(b)) 1 else 0
+                Opcode.EQIR -> if(value(a) == register(b)) 1 else 0
+                Opcode.EQRI -> if(register(a) == value(b)) 1 else 0
+                Opcode.EQRR -> if(register(a) == register(b)) 1 else 0
+            }
         }
+        return Registers(values.plus(instruction.c to value))
     }
 }
