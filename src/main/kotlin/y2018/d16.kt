@@ -12,7 +12,28 @@ fun main() {
         }
     }.count { it >= 3 }
 
+    val opcodeNumbers = workOutOpcodeNumbers(samples)
+    val instructions = chunks.last().lines().map { parseInstruction(opcodeNumbers, it) }
+    val part2 = instructions.fold(Registers()) { registers, instruction -> registers + instruction }.values[0]
+
     println(part1)
+    println(part2)
+}
+
+fun workOutOpcodeNumbers(samples: List<String>): Map<Int, Opcode> {
+    var mappedOpcodes = mapOf<Int, Opcode>()
+    var remainingOpcodes = Opcode.values().toSet()
+    while (remainingOpcodes.isNotEmpty()) {
+        val mappableSample = samples.find { sample ->
+            remainingOpcodes.filter { opcode -> behavesLike(opcode, sample) }.size == 1
+        } ?: throw IllegalArgumentException("Can't map any more samples")
+        val opcodeNumber = mappableSample.lines()[1].substringBefore(" ").toInt()
+        val mappedOpcode = remainingOpcodes.find { opcode -> behavesLike(opcode, mappableSample) }
+            ?: throw IllegalArgumentException("Can't map any opcode")
+        mappedOpcodes = mappedOpcodes + (opcodeNumber to mappedOpcode)
+        remainingOpcodes = remainingOpcodes - mappedOpcode
+    }
+    return mappedOpcodes
 }
 
 fun behavesLike(opcode: Opcode, sample: String): Boolean {
@@ -32,34 +53,22 @@ fun parseInstruction(opcode: Opcode, line: String): Instruction {
     return Instruction(opcode, a, b, c)
 }
 
-class Instruction(val opcode: Opcode, val a: Int, val b: Int, val c: Int)
-
-enum class Opcode {
-    ADDR,
-    ADDI,
-    MULR,
-    MULI,
-    BANR,
-    BANI,
-    BORR,
-    BORI,
-    SETR,
-    SETI,
-    GTIR,
-    GTRI,
-    GTRR,
-    EQIR,
-    EQRI,
-    EQRR,
+fun parseInstruction(opcodeMap: Map<Int, Opcode>, line: String): Instruction {
+    val opcode = opcodeMap.getValue(line.substringBefore(" ").toInt())
+    return parseInstruction(opcode, line)
 }
 
-data class Registers(val values: Map<Int, Long>) {
+class Instruction(val opcode: Opcode, val a: Int, val b: Int, val c: Int)
+
+enum class Opcode { ADDR, ADDI, MULR, MULI, BANR, BANI, BORR, BORI, SETR, SETI, GTIR, GTRI, GTRR, EQIR, EQRI, EQRR }
+
+data class Registers(val values: Map<Int, Long> = mapOf(0 to 0, 1 to 0, 2 to 0, 3 to 0)) {
     private fun register(register: Int) = values.getValue(register)
     private fun value(register: Int) = register.toLong()
 
     operator fun plus(instruction: Instruction): Registers {
         val value = with(instruction) {
-            when(opcode) {
+            when (opcode) {
                 Opcode.ADDR -> register(a) + register(b)
                 Opcode.ADDI -> register(a) + value(b)
                 Opcode.MULR -> register(a) * register(b)
@@ -70,12 +79,12 @@ data class Registers(val values: Map<Int, Long>) {
                 Opcode.BORI -> register(a).or(value(b))
                 Opcode.SETR -> register(a)
                 Opcode.SETI -> value(a)
-                Opcode.GTIR -> if(value(a) > register(b)) 1 else 0
-                Opcode.GTRI -> if(register(a) > value(b)) 1 else 0
-                Opcode.GTRR -> if(register(a) > register(b)) 1 else 0
-                Opcode.EQIR -> if(value(a) == register(b)) 1 else 0
-                Opcode.EQRI -> if(register(a) == value(b)) 1 else 0
-                Opcode.EQRR -> if(register(a) == register(b)) 1 else 0
+                Opcode.GTIR -> if (value(a) > register(b)) 1 else 0
+                Opcode.GTRI -> if (register(a) > value(b)) 1 else 0
+                Opcode.GTRR -> if (register(a) > register(b)) 1 else 0
+                Opcode.EQIR -> if (value(a) == register(b)) 1 else 0
+                Opcode.EQRI -> if (register(a) == value(b)) 1 else 0
+                Opcode.EQRR -> if (register(a) == register(b)) 1 else 0
             }
         }
         return Registers(values.plus(instruction.c to value))
