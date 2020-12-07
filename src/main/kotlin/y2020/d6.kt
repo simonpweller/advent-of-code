@@ -1,10 +1,10 @@
 package y2020
 
 import charCounts
-import inputTextSplitByBlankLines
+import inputChunks
 
 fun main() {
-    val groups = inputTextSplitByBlankLines(2020, 6)
+    val groups = inputChunks(2020, 6)
     println(groups.map { it.lines().joinToString("") }.map { charCounts(it).keys.size }.sum())
     println(groups.map { group ->
         val members = group.lines()
