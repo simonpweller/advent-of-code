@@ -58,12 +58,12 @@ fun parseInstruction(opcodeMap: Map<Int, Opcode>, line: String): Instruction {
     return parseInstruction(opcode, line)
 }
 
-class Instruction(val opcode: Opcode, val a: Int, val b: Int, val c: Int)
+data class Instruction(val opcode: Opcode, val a: Int, val b: Int, val c: Int)
 
 enum class Opcode { ADDR, ADDI, MULR, MULI, BANR, BANI, BORR, BORI, SETR, SETI, GTIR, GTRI, GTRR, EQIR, EQRI, EQRR }
 
-data class Registers(val values: Map<Int, Long> = mapOf(0 to 0, 1 to 0, 2 to 0, 3 to 0)) {
-    private fun register(register: Int) = values.getValue(register)
+data class Registers(val values: Map<Int, Long> = mapOf()) {
+    fun register(register: Int) = values.getOrDefault(register, 0)
     private fun value(register: Int) = register.toLong()
 
     operator fun plus(instruction: Instruction): Registers {
