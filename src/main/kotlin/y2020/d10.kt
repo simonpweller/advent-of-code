@@ -13,7 +13,6 @@ fun main() {
     val part1 = adapters
         .sorted()
         .zipWithNext().map { it.second - it.first }
-        .toList()
         .let { diffs -> diffs.count { it == 1 } * diffs.count { it == 3 } }
 
     val part2 = adapters
