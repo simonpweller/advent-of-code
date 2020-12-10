@@ -32,7 +32,8 @@ private data class Cave(val depth: Int, val targetCol: Int, val targetRow: Int) 
             val seen = mutableSetOf<Pair<Coordinate, Equipment>>()
             val states = DistinctPriorityQueue<State>(compareBy(
                 { it.minutes },
-                { abs(it.coordinate.row - targetRow) + abs(it.coordinate.col - targetCol) }
+                { abs(it.coordinate.col - targetCol) },
+                { abs(it.coordinate.row - targetRow) }
             ))
             states.add(State(Coordinate(0, 0), 0, TORCH))
             while (true) {
