@@ -7,62 +7,59 @@ fun main() {
     val depth = input.first().substringAfter(": ").toInt()
     val (targetCol, targetRow) = input.last().substringAfter(": ").split(",").map { it.toInt() }
 
-    val map = mutableMapOf<Coordinate, Int>()
+    println(Cave(depth, targetCol, targetRow).riskLevel)
+}
 
-    (0..targetRow).forEach { row ->
-        (0..targetCol).forEach { col ->
-            val geologicIndex = when {
+private data class Cave(val depth: Int, val targetCol: Int, val targetRow: Int) {
+    private val erosionLevels = mutableMapOf<Coordinate, Int>()
+    private val regionTypes = mutableMapOf<Coordinate, RegionType>()
+
+    val riskLevel: Int
+        get() = (0..targetRow).flatMap { row ->
+            (0..targetCol).map { col ->
+                getRegionType(Coordinate(row, col)).riskLevel
+            }
+        }.sum()
+
+    private fun getRegionType(coordinate: Coordinate): RegionType {
+        if (regionTypes.containsKey(coordinate)) return regionTypes.getValue(coordinate)
+        val regionType = when (getErosionLevel(coordinate) % 3) {
+            0 -> RegionType.ROCKY
+            1 -> RegionType.WET
+            else -> RegionType.NARROW
+        }
+        regionTypes[coordinate] = regionType
+        return regionType
+    }
+
+    private fun getErosionLevel(coordinate: Coordinate): Int {
+        if (erosionLevels.containsKey(coordinate)) return erosionLevels.getValue(coordinate)
+        val erosionLevel = erosionLevels[coordinate] ?: with(coordinate) {
+            when {
                 row == 0 && col == 0 -> 0
                 row == targetRow && col == targetCol -> 0
                 row == 0 -> col * 16807
                 col == 0 -> row * 48271
-                else -> map.getValue(Coordinate(row, col - 1)) * map.getValue(Coordinate(row - 1, col))
-            }
-            map[Coordinate(row, col)] = (geologicIndex + depth) % 20183
+                else -> getErosionLevel(Coordinate(row, col - 1)) * getErosionLevel(Coordinate(row - 1, col))
+            }.let { geologicIndex -> (geologicIndex + depth) % 20183 }
         }
+        erosionLevels[coordinate] = erosionLevel
+        return erosionLevel
     }
 
-    val cave = (0..targetRow).map { row ->
-        (0..targetCol).map { col ->
-            when (map.getValue(Coordinate(row, col)) % 3) {
-                0 -> RegionType.ROCKY
-                1 -> RegionType.WET
-                else -> RegionType.NARROW
+    private enum class RegionType {
+        ROCKY,
+        WET,
+        NARROW;
+
+        val riskLevel: Int
+            get() = when (this) {
+                ROCKY -> 0
+                WET -> 1
+                NARROW -> 2
             }
-        }
     }
 
-    printCave(cave)
-    println(getRiskLevel(cave))
+    private data class Coordinate(val row: Int, val col: Int)
 }
 
-private fun getRiskLevel(cave: List<List<RegionType>>) =
-    cave.flatMap { row ->
-        row.map {
-            when (it) {
-                RegionType.ROCKY -> 0
-                RegionType.WET -> 1
-                RegionType.NARROW -> 2
-            }
-        }
-    }.sum()
-
-private fun printCave(cave: List<List<RegionType>>) {
-    cave.forEach { row ->
-        println(row.joinToString("") {
-            when (it) {
-                RegionType.ROCKY -> "."
-                RegionType.WET -> "="
-                RegionType.NARROW -> "|"
-            }
-        })
-    }
-}
-
-private enum class RegionType {
-    ROCKY,
-    WET,
-    NARROW
-}
-
-private data class Coordinate(val row: Int, val col: Int)
