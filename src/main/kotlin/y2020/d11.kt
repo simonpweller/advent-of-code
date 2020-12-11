@@ -5,24 +5,33 @@ import inputLines
 fun main() {
     val rowStrings = inputLines(2020, 11)
     val seatingArea = SeatingArea(rowStrings)
-    seatingArea.tickTock()
+    seatingArea.waitForever()
     println(seatingArea.occupiedSeats)
+
+    val crazySeatingArea = CrazySeatingArea(rowStrings)
+    crazySeatingArea.waitForever()
+    println(crazySeatingArea.occupiedSeats)
 }
 
 
-private class SeatingArea(rowStrings: List<String>) {
+private open class SeatingArea(rowStrings: List<String>) {
     private var rows: List<List<SeatStatus>> = rowStrings.map { colString -> colString.map(Char::toSeatStatus) }
-    private val lastRowIndex = rows.lastIndex
-    private val lastColIndex = rows.first().lastIndex
+    protected val offsets = listOf(
+        Coordinates(-1, -1), Coordinates(-1, 0), Coordinates(-1, 1),
+        Coordinates(0, -1), Coordinates(0, 1),
+        Coordinates(1, -1), Coordinates(1, 0), Coordinates(1, 1),
+    )
+    protected val lastRowIndex = rows.lastIndex
+    protected val lastColIndex = rows.first().lastIndex
 
-    fun tickTock() {
+    fun waitForever() {
         while (true) {
-            val stable = tick()
+            val stable = wait()
             if (stable) return
         }
     }
 
-    private fun tick(): Boolean {
+    private fun wait(): Boolean {
         var stable = true
         rows =
             (0..lastRowIndex).map { rowIndex ->
@@ -39,16 +48,13 @@ private class SeatingArea(rowStrings: List<String>) {
     val occupiedSeats : Int
         get() = rows.sumBy { it.count { seatStatus -> seatStatus == SeatStatus.OCCUPIED } }
 
-    private fun nextStatus(coordinates: Coordinates): SeatStatus {
-        val neighbours = listOf(
-            Coordinates(-1, -1), Coordinates(-1, 0), Coordinates(-1, 1),
-            Coordinates(0, -1), Coordinates(0, 1),
-            Coordinates(1, -1), Coordinates(1, 0), Coordinates(1, 1),
-        )
+    protected open fun nextStatus(coordinates: Coordinates): SeatStatus {
+        val neighbours = offsets
             .map { offset -> coordinates + offset }
             .filter { it.col >= 0 && it.row >= 0 }
             .filter { it.row <= lastRowIndex && it.col <= lastColIndex }
             .map(Coordinates::seatStatus)
+
         return when (coordinates.seatStatus) {
             SeatStatus.FLOOR -> SeatStatus.FLOOR
             SeatStatus.EMPTY -> if (neighbours.any { it == SeatStatus.OCCUPIED }) SeatStatus.EMPTY else SeatStatus.OCCUPIED
@@ -65,6 +71,26 @@ private class SeatingArea(rowStrings: List<String>) {
     }
 
     override fun toString(): String = rows.joinToString("\n") { row -> row.joinToString("") }.plus("\n")
+}
+
+private class CrazySeatingArea(rowStrings: List<String>): SeatingArea(rowStrings) {
+    override fun nextStatus(coordinates: Coordinates): SeatStatus {
+        val neighbours = offsets
+            .mapNotNull { offset ->
+                generateSequence(coordinates) { coordinates -> coordinates + offset }
+                    .drop(1)
+                    .takeWhile { it.col >= 0 && it.row >= 0 && it.row <= lastRowIndex && it.col <= lastColIndex }
+                    .filter { it.seatStatus != SeatStatus.FLOOR }
+                    .firstOrNull()
+            }
+            .map(Coordinates::seatStatus)
+
+        return when (coordinates.seatStatus) {
+            SeatStatus.FLOOR -> SeatStatus.FLOOR
+            SeatStatus.EMPTY -> if (neighbours.any { it == SeatStatus.OCCUPIED }) SeatStatus.EMPTY else SeatStatus.OCCUPIED
+            SeatStatus.OCCUPIED -> if (neighbours.count { it == SeatStatus.OCCUPIED } >= 5) SeatStatus.EMPTY else SeatStatus.OCCUPIED
+        }
+    }
 }
 
 private enum class SeatStatus {
