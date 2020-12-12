@@ -8,40 +8,38 @@ fun main() {
         val direction = when (val dirString = it.substring(0, 1)) {
             "N", "S", "E", "W" -> CardinalDirection.valueOf(dirString)
             "L", "R" -> RelativeDirection.valueOf(dirString)
-            else -> Forward.F
+            else -> Forward
         }
         val amount = it.substring(1).toInt()
         EvasiveAction(direction, amount)
     }
-    val part1 = evasiveActions.fold(Part1(Position(0, 0), CardinalDirection.E)) { initial, operation ->
-        initial + operation
-    }.manhattanDistance
-    println(part1)
-
-    val part2 = evasiveActions.fold(Part2(Position(0, 0), waypoint = Position(10, 1))) { initial, operation ->
-        initial + operation
-    }.manhattanDistance
-    println(part2)
+    println(Part1().apply { take(evasiveActions) }.manhattanDistance)
+    println(Part2().apply { take(evasiveActions) }.manhattanDistance)
 }
 
-private sealed class Part(val position: Position) {
+private sealed class Part(var position: Position = Position(0, 0)) {
     val manhattanDistance: Int
         get() = abs(position.x) + abs(position.y)
+
+    fun take(evasiveActions: List<EvasiveAction>) {
+        evasiveActions.forEach { take(it) }
+    }
+    abstract fun take(evasiveAction: EvasiveAction)
 }
 
-private class Part1(position: Position, val facing: CardinalDirection): Part(position) {
-    operator fun plus(evasiveAction: EvasiveAction) = when (evasiveAction.direction) {
-        is CardinalDirection -> Part1(position.shift(evasiveAction.direction, evasiveAction.amount), facing)
-        is RelativeDirection -> Part1(position, facing.turn(evasiveAction.direction, evasiveAction.amount))
-        else -> Part1(position.shift(facing, evasiveAction.amount), facing)
+private class Part1(var facing: CardinalDirection = CardinalDirection.E): Part() {
+    override fun take(evasiveAction: EvasiveAction) = when (evasiveAction.direction) {
+        is CardinalDirection -> position = position.shift(evasiveAction.direction, evasiveAction.amount)
+        is RelativeDirection -> facing = facing.turn(evasiveAction.direction, evasiveAction.amount)
+        else -> position = position.shift(facing, evasiveAction.amount)
     }
 }
 
-private class Part2(position: Position, val waypoint: Position): Part(position) {
-    operator fun plus(evasiveAction: EvasiveAction): Part2 = when (evasiveAction.direction) {
-        is CardinalDirection -> Part2(position, waypoint.shift(evasiveAction.direction, evasiveAction.amount))
-        is RelativeDirection -> Part2(position, waypoint.rotate(evasiveAction.direction, evasiveAction.amount))
-        else -> Part2(Position(position.x + waypoint.x * evasiveAction.amount, position.y + waypoint.y * evasiveAction.amount), waypoint)
+private class Part2(var waypoint: Position = Position(10, 1)): Part() {
+    override fun take(evasiveAction: EvasiveAction) = when (evasiveAction.direction) {
+        is CardinalDirection -> waypoint = waypoint.shift(evasiveAction.direction, evasiveAction.amount)
+        is RelativeDirection -> waypoint = waypoint.rotate(evasiveAction.direction, evasiveAction.amount)
+        else -> position = Position(position.x + waypoint.x * evasiveAction.amount, position.y + waypoint.y * evasiveAction.amount)
     }
 }
 
@@ -100,6 +98,4 @@ private enum class RelativeDirection : Direction {
     R,
 }
 
-private enum class Forward: Direction {
-    F
-}
+private object Forward: Direction
