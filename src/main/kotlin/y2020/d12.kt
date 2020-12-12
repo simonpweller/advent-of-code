@@ -7,7 +7,8 @@ fun main() {
     val evasiveActions = inputLines(2020, 12).map {
         val direction = when (val dirString = it.substring(0, 1)) {
             "N", "S", "E", "W" -> CardinalDirection.valueOf(dirString)
-            else -> RelativeDirection.valueOf(dirString)
+            "L", "R" -> RelativeDirection.valueOf(dirString)
+            else -> Forward.F
         }
         val amount = it.substring(1).toInt()
         EvasiveAction(direction, amount)
@@ -23,33 +24,25 @@ fun main() {
     println(part2)
 }
 
-
-private data class Part1(val position: Position, val facing: CardinalDirection) {
-    operator fun plus(evasiveAction: EvasiveAction) = when (evasiveAction.direction) {
-        is CardinalDirection -> this.copy(position = position.shift(evasiveAction.direction, evasiveAction.amount))
-        RelativeDirection.L, RelativeDirection.R -> this.copy(
-            facing = List(evasiveAction.amount / 90) { evasiveAction.direction }.fold(this.facing)
-            { acc, curr -> acc + curr as RelativeDirection })
-        RelativeDirection.F -> this.copy(position = this.position.shift(facing, evasiveAction.amount))
-        else -> throw NotImplementedError()
-    }
-
+private sealed class Part(val position: Position) {
     val manhattanDistance: Int
         get() = abs(position.x) + abs(position.y)
 }
 
-private data class Part2(val position: Position, val waypoint: Position) {
-    operator fun plus(evasiveAction: EvasiveAction): Part2 = when (evasiveAction.direction) {
-        is CardinalDirection -> this.copy(waypoint = waypoint.shift(evasiveAction.direction, evasiveAction.amount))
-        RelativeDirection.L, RelativeDirection.R -> this.copy(
-            waypoint = List(evasiveAction.amount / 90) { evasiveAction.direction }.fold(this.waypoint)
-                { acc, curr -> acc.rotate(curr as RelativeDirection) })
-        RelativeDirection.F -> this.copy(position = Position(this.position.x + waypoint.x * evasiveAction.amount, this.position.y + waypoint.y * evasiveAction.amount))
-        else -> throw NotImplementedError()
+private class Part1(position: Position, val facing: CardinalDirection): Part(position) {
+    operator fun plus(evasiveAction: EvasiveAction) = when (evasiveAction.direction) {
+        is CardinalDirection -> Part1(position.shift(evasiveAction.direction, evasiveAction.amount), facing)
+        is RelativeDirection -> Part1(position, facing.turn(evasiveAction.direction, evasiveAction.amount))
+        else -> Part1(position.shift(facing, evasiveAction.amount), facing)
     }
+}
 
-    val manhattanDistance: Int
-        get() = abs(position.x) + abs(position.y)
+private class Part2(position: Position, val waypoint: Position): Part(position) {
+    operator fun plus(evasiveAction: EvasiveAction): Part2 = when (evasiveAction.direction) {
+        is CardinalDirection -> Part2(position, waypoint.shift(evasiveAction.direction, evasiveAction.amount))
+        is RelativeDirection -> Part2(position, waypoint.rotate(evasiveAction.direction, evasiveAction.amount))
+        else -> Part2(Position(position.x + waypoint.x * evasiveAction.amount, position.y + waypoint.y * evasiveAction.amount), waypoint)
+    }
 }
 
 private data class Position(val x: Int, val y: Int) {
@@ -60,10 +53,14 @@ private data class Position(val x: Int, val y: Int) {
         CardinalDirection.W -> this.copy(x = x - amount)
     }
 
+    fun rotate(direction: RelativeDirection, degrees: Int): Position {
+        if (degrees == 90) return rotate(direction)
+        return rotate(direction).rotate(direction, degrees - 90)
+    }
+
     fun rotate(direction: RelativeDirection): Position = when(direction) {
         RelativeDirection.L -> Position(x = -y, y = x)
         RelativeDirection.R -> Position(x= y, y = -x)
-        RelativeDirection.F -> throw NotImplementedError()
     }
 }
 
@@ -77,21 +74,23 @@ private enum class CardinalDirection : Direction {
     S,
     W;
 
-    operator fun plus(turning: RelativeDirection): CardinalDirection {
-        return when (turning) {
-            RelativeDirection.L -> when (this) {
-                N -> W
-                E -> N
-                S -> E
-                W -> S
-            }
-            RelativeDirection.R -> when (this) {
-                N -> E
-                E -> S
-                S -> W
-                W -> N
-            }
-            RelativeDirection.F -> throw NotImplementedError()
+    fun turn(direction: RelativeDirection, degrees: Int): CardinalDirection {
+        if (degrees == 90) return turn(direction)
+        return turn(direction).turn(direction, degrees - 90)
+    }
+
+    fun turn(direction: RelativeDirection): CardinalDirection = when (direction) {
+        RelativeDirection.L -> when (this) {
+            N -> W
+            E -> N
+            S -> E
+            W -> S
+        }
+        RelativeDirection.R -> when (this) {
+            N -> E
+            E -> S
+            S -> W
+            W -> N
         }
     }
 }
@@ -99,5 +98,8 @@ private enum class CardinalDirection : Direction {
 private enum class RelativeDirection : Direction {
     L,
     R,
-    F,
+}
+
+private enum class Forward: Direction {
+    F
 }
