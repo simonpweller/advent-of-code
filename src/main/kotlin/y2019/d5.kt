@@ -5,6 +5,7 @@ import inputText
 fun main() {
     val intcode = inputText(2019, 5).split(",").map(String::toInt)
     println(IntcodeComputer(intcode, listOf(1)).run())
+    println(IntcodeComputer(intcode, listOf(5)).run())
 }
 
 class IntcodeComputer(intcode: List<Int>, inputs: List<Int>) {
@@ -32,6 +33,20 @@ class IntcodeComputer(intcode: List<Int>, inputs: List<Int>) {
                 4 -> {
                     outputs.add(memory[param1Addr])
                     ip += 2
+                }
+                5 -> {
+                    if (memory[param1Addr] != 0) ip = memory[param2Addr] else ip += 3
+                }
+                6 -> {
+                    if (memory[param1Addr] == 0) ip = memory[param2Addr] else ip += 3
+                }
+                7 -> {
+                    memory[param3Addr] = if (memory[param1Addr] < memory[param2Addr]) 1 else 0
+                    ip += 4
+                }
+                8 -> {
+                    memory[param3Addr] = if (memory[param1Addr] == memory[param2Addr]) 1 else 0
+                    ip += 4
                 }
                 99 -> {
                     return outputs.last()
