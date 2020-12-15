@@ -8,7 +8,7 @@ fun main() {
     println(IntcodeComputer(intcode, listOf(5)).run())
 }
 
-class IntcodeComputer(intcode: List<Int>, inputs: List<Int>) {
+private class IntcodeComputer(intcode: List<Int>, inputs: List<Int>) {
     private val memory = intcode.toMutableList()
     private val inputStream = inputs.toMutableList()
     private val outputs = mutableListOf<Int>()
@@ -16,48 +16,19 @@ class IntcodeComputer(intcode: List<Int>, inputs: List<Int>) {
 
     fun run(): Int {
         while (ip < memory.size) {
-
             when (opcode) {
-                1 -> {
-                    memory[param3Addr] = (memory[param1Addr] + memory[param2Addr])
-                    ip += 4
-                }
-                2 -> {
-                    memory[param3Addr] = (memory[param1Addr] * memory[param2Addr])
-                    ip += 4
-                }
-                3 -> {
-                    memory[param1Addr] = inputStream.removeFirst()
-                    ip += 2
-                }
-                4 -> {
-                    outputs.add(memory[param1Addr])
-                    ip += 2
-                }
-                5 -> {
-                    if (memory[param1Addr] != 0) ip = memory[param2Addr] else ip += 3
-                }
-                6 -> {
-                    if (memory[param1Addr] == 0) ip = memory[param2Addr] else ip += 3
-                }
-                7 -> {
-                    memory[param3Addr] = if (memory[param1Addr] < memory[param2Addr]) 1 else 0
-                    ip += 4
-                }
-                8 -> {
-                    memory[param3Addr] = if (memory[param1Addr] == memory[param2Addr]) 1 else 0
-                    ip += 4
-                }
-                99 -> {
-                    return outputs.last()
-                }
+                1 -> set(3, get(1) + get(2)).also { ip += 4 }
+                2 -> set(3, get(1) * get(2)).also { ip += 4 }
+                3 -> set(1, inputStream.removeFirst()).also { ip += 2 }
+                4 -> outputs.add(get(1)).also { ip += 2 }
+                5 -> if (get(1) != 0) ip = get(2) else ip += 3
+                6 -> if (get(1) == 0) ip = get(2) else ip += 3
+                7 -> set(3, if (get(1) < get(2)) 1 else 0).also { ip += 4 }
+                8 -> set(3, if (get(1) == get(2)) 1 else 0).also { ip += 4 }
+                99 -> return outputs.last()
             }
         }
         throw IllegalArgumentException("Program didn't terminate")
-    }
-
-    fun write(value: Int) {
-        memory[memory[ip + 3]] = value
     }
 
     private val instruction: String
@@ -66,21 +37,12 @@ class IntcodeComputer(intcode: List<Int>, inputs: List<Int>) {
     private val opcode: Int
         get() = instruction.takeLast(2).toInt()
 
-    private val param1Addr: Int
-        get() {
-            val mode = instruction[2]
-            return if (mode == '0') memory[ip + 1] else ip + 1
-        }
+    private fun getMemoryAddress(param: Int): Int =
+        if (instruction[3 - param] == '0') memory[ip + param] else ip + param
 
-    private val param2Addr: Int
-        get() {
-            val mode = instruction[1]
-            return if (mode == '0') memory[ip + 2] else ip + 2
-        }
+    private fun get(param: Int): Int = memory[getMemoryAddress(param)]
 
-    private val param3Addr: Int
-        get() {
-            val mode = instruction[0]
-            return if (mode == '0') memory[ip + 3] else ip + 3
-        }
+    private fun set(param: Int, value: Int) {
+        memory[getMemoryAddress(param)] = value
+    }
 }
