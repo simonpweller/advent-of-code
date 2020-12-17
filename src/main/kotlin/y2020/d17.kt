@@ -5,36 +5,25 @@ import y2020.State.*
 
 fun main() {
     val inputLines = inputLines(2020, 17)
-    var map3D: Map<Coordinates, State> = parseMap3D(inputLines)
-    var map4D: Map<Coordinates, State> = parseMap4D(inputLines)
-    repeat(6) {
-        map3D = runCycle(map3D)
-        map4D = runCycle(map4D)
-    }
-    println(map3D.values.count { it == ACTIVE })
-    println(map4D.values.count { it == ACTIVE })
+    println(solve(inputLines) { x, y -> Coordinates3D(x, y, 0) })
+    println(solve(inputLines) { x, y -> Coordinates4D(x, y, 0, 0) })
 }
 
-private fun parseMap3D(inputLines: List<String>): Map<Coordinates, State> =
-    listOf(inputLines.flatMapIndexed { rowIndex, row ->
+private fun solve(inputLines: List<String>, coordinateBuilder: (x: Int, y: Int) -> Coordinates): Int {
+    var map = listOf(inputLines.flatMapIndexed { rowIndex, row ->
         row.mapIndexed { colIndex, col ->
             val x = colIndex - inputLines.size / 2
             val y = rowIndex - row.length / 2
-            val z = 0
-            Coordinates3D(x, y, z) to if (col == '#') ACTIVE else INACTIVE
+            Pair(coordinateBuilder(x, y), if (col == '#') ACTIVE else INACTIVE)
         }
     }).flatten().toMap()
 
-private fun parseMap4D(inputLines: List<String>): Map<Coordinates, State> =
-    listOf(inputLines.flatMapIndexed { rowIndex, row ->
-        row.mapIndexed { colIndex, col ->
-            val x = colIndex - inputLines.size / 2
-            val y = rowIndex - row.length / 2
-            val z = 0
-            val w = 0
-            Coordinates4D(x, y, z, w) to if (col == '#') ACTIVE else INACTIVE
-        }
-    }).flatten().toMap()
+    repeat(6) {
+        map = runCycle(map)
+    }
+
+    return map.values.count { it == ACTIVE }
+}
 
 private fun runCycle(map: Map<Coordinates, State>): MutableMap<Coordinates, State> {
     val nextMap = map.toMutableMap()
@@ -64,7 +53,7 @@ private interface Coordinates {
     val neighbours: List<Coordinates>
 }
 
-private data class Coordinates3D(val x: Int, val y: Int, val z: Int): Coordinates {
+private data class Coordinates3D(val x: Int, val y: Int, val z: Int) : Coordinates {
     override val neighbours: List<Coordinates3D>
         get() =
             (-1..1).flatMap { xOffset ->
@@ -80,7 +69,7 @@ private data class Coordinates3D(val x: Int, val y: Int, val z: Int): Coordinate
             }
 }
 
-private data class Coordinates4D(val x: Int, val y: Int, val z: Int, val w: Int): Coordinates {
+private data class Coordinates4D(val x: Int, val y: Int, val z: Int, val w: Int) : Coordinates {
     override val neighbours: List<Coordinates4D>
         get() =
             (-1..1).flatMap { xOffset ->
