@@ -8,14 +8,14 @@ fun main() {
     println(IntcodeComputer(intcode, listOf(5)).run())
 }
 
-private class IntcodeComputer(intcode: List<Int>, inputs: List<Int>) {
-    private val memory = intcode.toMutableList()
+private class IntcodeComputer(val intcode: List<Int>, inputs: List<Int>) {
+    private val memory = intcode.mapIndexed { index, int -> index to int }.toMap().toMutableMap()
     private val inputStream = inputs.toMutableList()
     private val outputs = mutableListOf<Int>()
     var ip = 0
 
     fun run(): Int {
-        while (ip < memory.size) {
+        while (ip < intcode.size) {
             when (opcode) {
                 1 -> set(3, get(1) + get(2)).also { ip += 4 }
                 2 -> set(3, get(1) * get(2)).also { ip += 4 }
@@ -38,9 +38,9 @@ private class IntcodeComputer(intcode: List<Int>, inputs: List<Int>) {
         get() = instruction.takeLast(2).toInt()
 
     private fun getMemoryAddress(param: Int): Int =
-        if (instruction[3 - param] == '0') memory[ip + param] else ip + param
+        if (instruction[3 - param] == '0') memory.getValue(ip + param) else ip + param
 
-    private fun get(param: Int): Int = memory[getMemoryAddress(param)]
+    private fun get(param: Int): Int = memory.getOrDefault(getMemoryAddress(param), 0)
 
     private fun set(param: Int, value: Int) {
         memory[getMemoryAddress(param)] = value
