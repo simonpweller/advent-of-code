@@ -8,7 +8,7 @@ fun main() {
     println(IntcodeComputer(intcode, listOf(5)).run().last())
 }
 
-class IntcodeComputer(private val intcode: List<Long>, inputs: List<Long>) {
+class IntcodeComputer(private val intcode: List<Long>, inputs: List<Long> = emptyList()) {
     private val memory = intcode.mapIndexed { index, int -> index.toLong() to int }.toMap().toMutableMap()
     private val inputStream = inputs.toMutableList()
     private val outputs = mutableListOf<Long>()
