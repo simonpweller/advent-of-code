@@ -3,35 +3,31 @@ package y2020
 import inputText
 
 fun main() {
-    val input = inputText(2020, 23)
-    println(part1(input))
+    val input = inputText(2020, 23).map { it.toString().toInt() }
+    val cupMap = linkCups(input)
+    println(cupMap)
 }
 
-private fun part1(input: String) =
-    CupArrangement(input.map { it.toString().toInt() }, 0, 9).apply { move(100) }.cupOrder.joinToString("")
-
-data class CupArrangement(var cups: List<Int>, var currentIndex: Int = 0, val maxLabel: Int) {
-    private fun move() {
-        val currentCup = cups[currentIndex]
-        val cupsToMove =
-            cups.drop(currentIndex + 1).take(3).let { it.plus(cups.take(3 - it.size)) }
-        var destinationCupLabel = cups[currentIndex] - 1
-        if (destinationCupLabel < 1) destinationCupLabel = maxLabel
-        while (destinationCupLabel in cupsToMove) {
-            destinationCupLabel--
-            if (destinationCupLabel < 1) destinationCupLabel = maxLabel
-        }
-        val remainingCups = cups.minus(cupsToMove)
-        val destinationCupIndex = remainingCups.indexOf(destinationCupLabel)
-        cups = remainingCups.subList(0, destinationCupIndex + 1) + cupsToMove +
-                remainingCups.subList(destinationCupIndex + 1, remainingCups.size)
-        currentIndex = if (cups.indexOf(currentCup) == cups.lastIndex) 0 else cups.indexOf(currentCup) + 1
+private fun linkCups(input: List<Int>): Map<Int, Cup> {
+    val first = Cup(input.first())
+    val cupMap = mutableMapOf(first.label to first)
+    var prev = first
+    input.drop(1).forEach {
+        val cup = Cup(it)
+        cupMap[it] = cup
+        prev.next = cup
+        prev = cup
     }
+    prev.next = first
+    return cupMap
+}
 
-    fun move(times: Int) {
-        repeat(times) { this.move() }
-    }
+class Cup(val label: Int) {
+    private var _next: Cup? = null
 
-    val cupOrder: List<Int>
-        get() = cups.subList(cups.indexOf(1) + 1, cups.lastIndex) + cups.subList(0, cups.indexOf(1))
+    var next: Cup
+        get() = _next!!
+        set(value) { _next = value}
+
+    override fun toString(): String = "$label: ${next.label}"
 }
