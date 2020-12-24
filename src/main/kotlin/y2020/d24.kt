@@ -9,7 +9,7 @@ fun main() {
     var colorMap = getColorMap()
     println(colorMap.values.filter { it == BLACK }.size)
 
-    repeat(100) { iteration ->
+    repeat(100) {
         val newCoordinatesWithMultipleNeighbours =
             colorMap.keys.flatMap { it.neighbours }.fold(mapOf<Coordinate, Int>()) { counts, coordinate ->
                 counts.plus(coordinate to counts.getOrDefault(coordinate, 0) + 1)
