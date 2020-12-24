@@ -6,27 +6,31 @@ import y2020.Color.WHITE
 import y2020.HexDirection.*
 
 fun main() {
-    val colorMap = getColorMap()
+    var colorMap = getColorMap()
+    println(colorMap.values.filter { it == BLACK }.size)
+
+    repeat(100) { iteration ->
+        val newCoordinatesWithMultipleNeighbours =
+            colorMap.keys.flatMap { it.neighbours }.fold(mapOf<Coordinate, Int>()) { counts, coordinate ->
+                counts.plus(coordinate to counts.getOrDefault(coordinate, 0) + 1)
+            }.filter { entry -> entry.value > 1 }.keys
+        val coordinatesToCheck = colorMap.keys + newCoordinatesWithMultipleNeighbours
+        colorMap = coordinatesToCheck.fold(mapOf()) { map, coordinate ->
+            val adjacentBlackTiles = coordinate.neighbours.count { colorMap.getOrDefault(it, WHITE) == BLACK }
+            val nextColor = when (colorMap.getOrDefault(coordinate, WHITE)) {
+                BLACK -> if (adjacentBlackTiles == 0 || adjacentBlackTiles > 2) WHITE else BLACK
+                WHITE -> if (adjacentBlackTiles == 2) BLACK else WHITE
+            }
+            map.plus(coordinate to nextColor)
+        }
+    }
     println(colorMap.values.filter { it == BLACK }.size)
 }
 
 private fun getColorMap(): Map<Coordinate, Color> {
     val instructions = inputLines(2020, 24).map { str ->
-        var prev: String? = null
-        val directions = mutableListOf<HexDirection>()
-        str.map { it.toString().toUpperCase() }.forEach { char ->
-            if (char == "N" || char == "S") {
-                prev = char
-            } else {
-                if (prev == null) {
-                    directions.add(valueOf(char))
-                } else {
-                    directions.add(valueOf(prev + char))
-                    prev = null
-                }
-            }
-        }
-        directions
+        str.replace("e", "e ").replace("w", "w ").trim().toUpperCase().split(" ")
+            .map { HexDirection.valueOf(it) }
     }
 
     val locations = instructions.map { instruction ->
@@ -38,15 +42,14 @@ private fun getColorMap(): Map<Coordinate, Color> {
             )
         ) { coordinate, hexDirection -> coordinate + hexDirection }
     }
-    val colorMap = locations.fold(mapOf<Coordinate, Color>()) { map, coordinate ->
-        map.plus(
+    return locations.fold(mapOf()) { map, coordinate ->
+        map.plus<Coordinate, Color>(
             coordinate to !map.getOrDefault(
                 coordinate,
                 WHITE
             )
         )
     }
-    return colorMap
 }
 
 private data class Coordinate(val x: Int, val y: Int, val z: Int) {
@@ -61,6 +64,9 @@ private data class Coordinate(val x: Int, val y: Int, val z: Int) {
             SW -> Coordinate(x - 1, y, z + 1)
         }
     }
+
+    val neighbours: Set<Coordinate>
+        get() = HexDirection.values().map { this + it }.toSet()
 }
 
 private enum class HexDirection {
@@ -70,7 +76,7 @@ private enum class HexDirection {
 private enum class Color {
     BLACK, WHITE;
 
-    operator fun not() = when(this) {
+    operator fun not() = when (this) {
         BLACK -> WHITE
         WHITE -> BLACK
     }
