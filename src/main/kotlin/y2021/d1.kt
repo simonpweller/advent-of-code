@@ -8,11 +8,11 @@ fun main() {
     println(part2(measurements))
 }
 
-fun part1(measurements: List<Long>): Int = measurements
+private fun part1(measurements: List<Long>): Int = measurements
     .windowed(2)
     .count { it.last() > it.first() }
 
-fun part2(measurements: List<Long>): Int = measurements
+private fun part2(measurements: List<Long>): Int = measurements
     .windowed(3)
     .windowed(2)
     .count { it.last().sum() > it.first().sum() }
