@@ -2,3 +2,4 @@
 .idea
 build
 src/main/kotlin/*/*.txt
+local.properties
