@@ -12,7 +12,7 @@ fun main() {
     println(grid.activePixelCount())
 }
 
-private class Grid(rules: List<String>) {
+class Grid(rules: List<String>) {
     private var rows = stringToRows(".#./..#/###")
     private val expandedRules = expandRules(rules)
 
@@ -46,7 +46,7 @@ private class Grid(rules: List<String>) {
     override fun toString() = rowsToString(rows)
 }
 
-private fun expandRules(rules: List<String>): Map<String, String> =
+fun expandRules(rules: List<String>): Map<String, String> =
     rules.flatMap { rule ->
         val (before, after) = rule.split(" => ")
         Pattern(before).variations().map { it to after }
@@ -55,7 +55,7 @@ private fun expandRules(rules: List<String>): Map<String, String> =
 private fun stringToRows(string: String) = string.split('/').map(String::toList)
 private fun rowsToString(rows: List<List<Char>>) = rows.joinToString("/") { it.joinToString("") }
 
-private class Pattern(string: String) {
+class Pattern(string: String) {
     private var rows = stringToRows(string)
 
     fun rotate() {
