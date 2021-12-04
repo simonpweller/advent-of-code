@@ -1,6 +1,7 @@
 package y2019
 
 import inputText
+import java.awt.desktop.SystemSleepEvent
 
 fun main() {
     val intcode = inputText(2019, 19).split(",").map(String::toLong)
@@ -19,22 +20,21 @@ private fun part1(intcode: List<Long>): Long {
 
 private fun part2(intcode: List<Long>): Long {
     val map = mutableMapOf<Long, Pair<Long, Long>>()
-
     var x = 0L
-    while (IntcodeComputer(intcode, listOf(x, 90L)).run().first() == 0L) { x++ }
+    while (IntcodeComputer(intcode, listOf(x, 99L)).run().first() == 0L) { x++ }
     var startX = x
-    while (IntcodeComputer(intcode, listOf(x, 90L)).run().first() == 1L) { x++ }
+    while (IntcodeComputer(intcode, listOf(x, 99L)).run().first() == 1L) { x++ }
     var endX = x - 1
 
-    (91L .. 10000).forEach { y ->
+    (100L .. 10000).forEach { y ->
         while (IntcodeComputer(intcode, listOf(startX, y)).run().first() == 0L) { startX++ }
         while (IntcodeComputer(intcode, listOf(endX, y)).run().first() == 1L) { endX++ }
         endX--
         map[y] = Pair(startX, endX)
     }
 
-    val r = (191L .. 10000).find {
-        map.getValue(it).first + 100 <= map.getValue(it - 100).second
+    val r = (200L .. 10000).find {
+        map.getValue(it).first + 99 <= map.getValue(it - 99).second
     } ?: throw IllegalArgumentException("No solution")
 
     val sy = r - 99
