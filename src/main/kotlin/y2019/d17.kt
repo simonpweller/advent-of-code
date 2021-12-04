@@ -28,7 +28,7 @@ fun main() {
     println(part2(intcode))
 }
 
-fun part2(intcode: List<Long>): Long {
+private fun part2(intcode: List<Long>): Long {
     val moves = "A,C,A,B,A,A,B,C,B,C\n"
     val a = "L,12,L,8,R,12\n"
     val b = "R,12,L,8,L,10\n"
