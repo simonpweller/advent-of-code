@@ -12,41 +12,40 @@ private fun part1(lines: List<ProgramLine>) = lines
     .sumOf { it.syntaxErrorScore }
 
 private fun part2(lines: List<ProgramLine>) = lines
-    .filterNot { it.hasSyntaxError }.let { incompleteLines ->
+    .filterNot { it.isCorrupted }.let { incompleteLines ->
         incompleteLines.map { it.completionStringScore }.sorted()[incompleteLines.size / 2]
     }
 
-private data class ProgramLine(val chars: String) {
-    val unmatchedBrackets: List<Char>
-        get() = chars
-            .fold(emptyList()) { unmatchedBrackets, char ->
+private data class ProgramLine(val brackets: String) {
+    val unmatchedBrackets: List<Bracket>
+        get() = brackets
+            .fold(emptyList()) { unmatchedBrackets, bracket ->
                 when {
-                    char.isOpeningBracket -> unmatchedBrackets.plus(char)
-                    char.matchingBracket != unmatchedBrackets.last() -> unmatchedBrackets.plus(char)
-                    else -> unmatchedBrackets.dropLast(1)
+                    bracket.isClosing && bracket.match == unmatchedBrackets.last() -> unmatchedBrackets.dropLast(1)
+                    else -> unmatchedBrackets.plus(bracket)
                 }
             }
 
-    val hasSyntaxError: Boolean
-        get() = unmatchedBrackets.any { it.isClosingBracket }
+    val isCorrupted: Boolean
+        get() = unmatchedBrackets.any { it.isClosing }
 
     val syntaxErrorScore: Int
         get() = unmatchedBrackets
-            .firstOrNull { it.isClosingBracket }?.illegalCharacterScore ?: 0
+            .firstOrNull { it.isClosing }?.illegalCharacterScore ?: 0
 
+//  New!
     val completionStringScore: Long
         get() = unmatchedBrackets
             .reversed()
-            .fold(0L) { score, char -> score * 5 + char.closingCharacterScores }
+            .fold(0L) { score, bracket -> score * 5 + bracket.closingCharacterScores }
 }
 
-private val Char.isOpeningBracket: Boolean
-    get() = setOf('(', '[', '{', '<').contains(this)
+typealias Bracket = Char
 
-private val Char.isClosingBracket: Boolean
+private val Bracket.isClosing: Boolean
     get() = setOf(')', ']', '}', '>').contains(this)
 
-private val Char.illegalCharacterScore: Int
+private val Bracket.illegalCharacterScore: Int
     get() = when (this) {
         ')' -> 3
         ']' -> 57
@@ -55,7 +54,7 @@ private val Char.illegalCharacterScore: Int
         else -> throw IllegalArgumentException("Not a closing bracket")
     }
 
-private val Char.closingCharacterScores: Int
+private val Bracket.closingCharacterScores: Int
     get() = when (this) {
         '(' -> 1
         '[' -> 2
@@ -64,7 +63,7 @@ private val Char.closingCharacterScores: Int
         else -> throw IllegalArgumentException("Not an opening bracket")
     }
 
-private val Char.matchingBracket: Char
+private val Bracket.match: Char
     get() = when (this) {
         ')' -> '('
         '(' -> ')'
