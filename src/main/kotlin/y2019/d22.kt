@@ -34,3 +34,12 @@ private fun dealWithIncrement(position: Long, increment: Int, deckSize: Long): L
     val stepsToTake = position - acc
     return stepsToTake * increment - gap - 1
 }
+
+// work backwards through instructions
+// e.g. last instruction moves card from position 15 to position 2020
+// previous to last instruction moves card from position 5 to position 15 etc.
+
+// complete 1 shuffle cycle with target 2020, e.g. that results in 1010
+// complete next shuffle cycle with target 1010, etc.
+
+// print position after each cycle, look for a loop.
