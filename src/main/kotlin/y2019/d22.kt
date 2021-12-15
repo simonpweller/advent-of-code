@@ -23,9 +23,14 @@ private fun cut(position: Long, count: Int, deckSize: Long) =
     }
 private fun dealIntoNewStack(position: Long, deckSize: Long) = deckSize - 1 - position
 private fun dealWithIncrement(position: Long, increment: Int, deckSize: Long): Long {
-    var nextIndex = 0L
-    repeat(position.toInt()) {
-        nextIndex = (nextIndex + increment) % deckSize
+    var acc = 0L
+    var gap = -1L
+    var positionsOnNextLine = (deckSize + gap) / increment
+    while (acc + positionsOnNextLine < position) {
+        acc += positionsOnNextLine
+        gap = (deckSize + gap) % increment
+        positionsOnNextLine = (deckSize + gap) / increment
     }
-    return nextIndex
+    val stepsToTake = position - acc
+    return stepsToTake * increment - gap - 1
 }
