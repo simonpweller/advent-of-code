@@ -4,27 +4,28 @@ import inputLines
 
 fun main() {
     val input = inputLines(2019, 22)
-    val deck = input.fold((0 until 10007L).toList()) { acc, line ->
+    val deckSize = 10007L
+    val res = input.fold(2019L) { acc, line ->
         when {
-            line.startsWith("cut") -> cut(acc, line.split(" ").last().toInt())
-            line.startsWith("deal with increment") -> dealWithIncrement(acc, line.split(" ").last().toInt())
-            else -> dealIntoNewStack(acc)
+            line.startsWith("cut") -> cut(acc, line.split(" ").last().toInt(), deckSize)
+            line.startsWith("deal with increment") -> dealWithIncrement(acc, line.split(" ").last().toInt(), deckSize)
+            else -> dealIntoNewStack(acc, deckSize)
         }
     }
-    println(deck.indexOfFirst { it == 2019L })
+    println(res)
 }
 
-private fun cut(deck: List<Long>, count: Int) =
-    if (count < 0) deck.takeLast(-count) + deck.dropLast(-count) else deck.drop(count) + deck.take(count)
-
-private fun dealIntoNewStack(deck: List<Long>) = deck.reversed()
-
-private fun dealWithIncrement(deck: List<Long>, increment: Int): List<Long> {
-    val newDeck = LongArray(deck.size)
-    var index = 0
-    deck.forEach { card ->
-        newDeck[index] = card
-        index = (index + increment) % deck.size
+private fun cut(position: Long, count: Int, deckSize: Long) =
+    if (count < 0) {
+        if (position >= deckSize + count) position - count - deckSize else position - count
+    } else {
+        if (position >= count) position - count else deckSize - count + position
     }
-    return newDeck.toList()
+private fun dealIntoNewStack(position: Long, deckSize: Long) = deckSize - 1 - position
+private fun dealWithIncrement(position: Long, increment: Int, deckSize: Long): Long {
+    var nextIndex = 0L
+    repeat(position.toInt()) {
+        nextIndex = (nextIndex + increment) % deckSize
+    }
+    return nextIndex
 }
