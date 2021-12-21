@@ -9,32 +9,46 @@ fun main() {
 }
 
 
-private class DiracDice(var player1Position: Int, var player2Position: Int) {
-    var player1Points = 0
-    var player2Points = 0
-    var nextDie = 1
-    var diceRolls = 0
-    var player1Next = true
+private class DiracDice(player1Position: Int, player2Position: Int) {
+    val player1 = Player(player1Position, 0)
+    val player2 = Player(player2Position, 0)
+    val dice = Dice(1)
+    var nextPlayer = player1
 
     fun play(): Int {
-        while (player1Points < 1000 && player2Points < 1000) {
-            if (player1Next) {
-                repeat(3) {
-                    player1Position = ((player1Position + nextDie) % 10).let { if (it == 0) 10 else it  }
-                    nextDie = (nextDie + 1).let { if (it > 100) it - 100 else it }
-                    diceRolls++
-                }
-                player1Points += player1Position
-            } else {
-                repeat(3) {
-                    player2Position = ((player2Position + nextDie) % 10).let { if (it == 0) 10 else it  }
-                    nextDie = (nextDie + 1).let { if (it > 100) it - 100 else it }
-                    diceRolls++
-                }
-                player2Points += player2Position
-            }
-            player1Next = !player1Next
+        while (!hasEnded) {
+            nextPlayer.play(dice)
+            toggleNextPlayer()
         }
-        return if (player1Points >= 1000) player2Points * diceRolls else player1Points * diceRolls
+        return losingPlayer.points * dice.rollCount
+    }
+
+    private val hasEnded: Boolean
+        get() = player1.hasWon || player2.hasWon
+
+    private val losingPlayer: Player
+        get() = if (player1.hasWon) player2 else player1
+
+    private fun toggleNextPlayer() {
+        nextPlayer = if (nextPlayer == player1) player2 else player1
+    }
+}
+
+private class Player(var position: Int, var points: Int) {
+    fun play(dice: Dice) {
+        repeat(3) {
+            position = ((position + dice.roll()) % 10).let { if (it == 0) 10 else it  }
+        }
+        points += position
+    }
+
+    val hasWon: Boolean
+        get() = points >= 1000
+}
+
+private class Dice(var next: Int, var rollCount: Int = 0) {
+    fun roll(): Int = next.also {
+        next = (next + 1).let { if (it > 100) it - 100 else it }
+        rollCount++
     }
 }
